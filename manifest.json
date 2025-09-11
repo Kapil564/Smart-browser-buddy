@@ -1,0 +1,16 @@
+{
+  "name": "Ai Summerizer",
+  "description": "Summerize any webpage using AI",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://*/*", "http://*/*"],
+  "action": { "default_popup": "popup.html","default_icon":"ghost.png" },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
+    }
+  ]
+}
