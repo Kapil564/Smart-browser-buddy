@@ -1,46 +1,37 @@
-async function checkAIAvailability() {
-  try {
-    const availability = await window.LanguageModel.availability();
-    console.log("Availability:", availability);
-    if (
-      availability === "available" ||
-      availability === "downloadable" ||
-      availability === "downloading"
-    ) {
-      return true;
-    } else {
-      return false;
+document.getElementById('summarizeBtn').addEventListener('click', () => {
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tab = tabs[0];
+    
+    if (!tab) {
+      console.error("No active tab found.");
+      return;
     }
-  } catch (error) {
-    console.error("Error checking AI availability:", error);
-    return false;
-  }
-}
 
-const button = document.getElementById("summarizeBtn");
+    
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: getFormattedContent 
+    }, (injectionResults) => {
+     
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError.message);
+        document.getElementById('result').value = "Failed to extract text. Please try again or refresh the page.";
+        return;
+      }
 
-button.addEventListener("click", async () => {
-  const isAIAvailable = await checkAIAvailability();
-  if (!isAIAvailable) {
-    console.log("Chrome AI not detected. Enable in chrome://flags");
-    return;
-  }
-
-  console.log("button clicked");
-
-  try {
-    // ✅ create the summarizer with output language
-    const summarizer = await window.LanguageModel.create({
-      task: "summarization",
-      output: { language: "en" } // 🔥 required param
+      if (injectionResults && injectionResults[0] && injectionResults[0].result) {
+        const extractedData = injectionResults[0].result;
+        const textareaTab = document.getElementById('result');
+        textareaTab.value = extractedData; // Display the text in the textarea
+      } else {
+        document.getElementById('result').value = "Failed to get data from the page.";
+      }
     });
-
-    const text =
-      "Chrome built-in AI provides Summarizer, Prompt, and other APIs to developers directly inside the browser.";
-    const result = await summarizer.summarize(text);
-
-    console.log("Summary:", result);
-  } catch (err) {
-    console.error("Error using summarizer:", err);
-  }
+  });
 });
+
+
+function getFormattedContent() {
+  return document.body.innerText;
+}
