@@ -98,6 +98,10 @@
             border-top-color: #1ed6f9;
             animation: spin 1s ease-in-out infinite;
         }
+        .filled{
+            height: fit-content;
+            width: fit-content;
+        }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -113,7 +117,8 @@
             <button id="summarizeBtn">Summarize with Chrome AI</button>
         </div>
         <div id="loading" class="loading"></div>
-        <textarea id="result" placeholder="Click the button above to summarize this page using Chrome's built-in AI..." readonly></textarea>
+        <textarea id="result" placeholder="Click the button above to summarize this page using Chrome's built-in AI..." readonly>
+        </textarea>
         <div class="status" id="status"></div>
     </div>
     <script src="popup.js"></script>
