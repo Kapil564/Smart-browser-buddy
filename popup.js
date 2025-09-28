@@ -35,7 +35,7 @@ document.getElementById("summarizeBtn").addEventListener("click", () => {
         console.log("activate the summarizer in chrome");
       }
     } catch (error) {
-      console.error("Script injection failed: ", error);
+      console.error("Script injection failed: ", error.message);
     } finally {
       loadingIndicator.classList.remove("show");
       summarizeBtn.disabled = false;
@@ -62,7 +62,7 @@ function getFormattedContent() {
     "select",
     "nav",
     "footer",
-    "header",
+
     "aside",
   ];
   excludeElements.forEach((tag) => {
@@ -85,19 +85,16 @@ function streamTextToTextarea(text, textareaElement) {
       );
       textareaElement.value += chunk;
       autoResizeTextarea(textareaElement);
-      textareaElement.scrollTop = textareaElement.scrollHeight; // Auto-scroll to bottom
+      textareaElement.scrollTop = textareaElement.scrollHeight; 
       index += chunkSize;
-
-      // Use requestAnimationFrame for better performance
       requestAnimationFrame(writeNextChunk);
     }
   }
 
-  // Start streaming
   writeNextChunk();
 }
 
-// to make complete text visible
+
 function autoResizeTextarea(textarea) {
   textarea.style.height = "auto";
   const maxHeight = 400; 
@@ -115,7 +112,7 @@ document.getElementById("searchInput").addEventListener("keydown", async (e) => 
   }
 });
 
-//
+
 async function handleSearch() {
   const searchInput = document.getElementById("searchInput").value;
   if (!searchInput || searchInput.trim() === "") {
@@ -127,13 +124,20 @@ async function handleSearch() {
   resultArea.placeholder = "generating.....";
   autoResizeTextarea(resultArea);
   try{
-  const pageUrl= document.baseURI;
-  const option ={
-    outputLanguage:"en",
-    type:"webpage",
-    url:pageUrl
-  }
-  const session = await LanguageModel.create(option);
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+    if (!tab || !tab.url) {
+        console.error("No active tab or URL found.");
+        return;
+    }
+  const pageUrl= tab.url;
+  const option = {
+      outputLanguage: "en",
+      type: "text",
+      sharedContent : pageUrl
+
+    };
+  const session = await LanguageModel.create(option,{url: pageUrl});
   if (!session) {
     console.error("Failed to create LanguageModel session");
     return;

@@ -4,7 +4,7 @@
   "version": "1.0",
   "manifest_version": 3,
   "host_permissions": ["https://*/*", "<all_urls>"],
-  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel","tabs"],
   "side_panel": {
     "default_path": "popup.html"
   },
