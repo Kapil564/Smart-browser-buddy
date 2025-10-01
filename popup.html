@@ -13,18 +13,22 @@
         align-items: center;
         justify-content: center;
         padding: 5px;
-        max-width: 400px;
+        max-width: auto;
       }
+
       .card {
         background: #fff;
         border-radius: 16px;
         box-shadow: 0 4px 16px rgba(58, 57, 57, 0.12);
-        padding: 24px 18px 18px 18px;
+        padding: 18px;
         width: 100%;
         height: 100%;
         box-sizing: border-box;
         text-align: center;
+        display: flex;
+        flex-direction: column;
       }
+
       h2 {
         margin: 0 0 12px 0;
         font-size: 1.3rem;
@@ -34,15 +38,18 @@
         align-items: center;
         justify-content: center;
       }
+
       h2 img {
         height: 24px;
         margin-right: 8px;
       }
+
       .button-container {
         display: flex;
         justify-content: center;
         margin-bottom: 12px;
       }
+
       button {
         padding: 10px 18px;
         font-size: 15px;
@@ -58,24 +65,27 @@
         align-items: center;
         justify-content: center;
       }
+
       button:hover {
         background: linear-gradient(90deg, #70a1ff 60%, #1ed6f9 100%);
         transform: translateY(-2px);
       }
+
       button:active {
         transform: translateY(0);
       }
+
       button:disabled {
         background: #cccccc;
         cursor: not-allowed;
       }
+
       #result {
         width: 100%;
         font-size: 15px;
         font-weight: normal;
         padding: 12px;
-        min-height: 120px; 
-        max-height: 400px;
+        flex: 1; 
         color: #fff;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
@@ -86,12 +96,14 @@
         line-height: 1.5;
         overflow-y: auto;
       }
+
       .status {
         font-size: 12px;
-        color: #eeebeb;
-        margin-top: 8px;
+        color: #555;
+        margin: 6px 0;
         text-align: center;
       }
+
       .loading {
         display: none;
         margin: 10px auto;
@@ -102,13 +114,14 @@
         border-top-color: #1ed6f9;
         animation: spin 1s ease-in-out infinite;
       }
+
       .search-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-top: 14px;
         gap: 8px;
         width: 100%;
+        margin-top: 12px;
       }
 
       #searchInput {
@@ -124,10 +137,9 @@
         transition: border 0.2s;
         max-width: 100%;
         box-sizing: border-box;
-        overflow-x: auto;
-        overflow-y: auto;
-        min-height: 120px;
-        overflow: hidden;
+        resize: vertical;
+        min-height: 32px;
+        max-height: 80px;
       }
 
       #searchInput:focus {
@@ -151,13 +163,37 @@
       #searchBtn:hover {
         background: linear-gradient(90deg, #70a1ff 60%, #1ed6f9 100%);
       }
+
       @keyframes spin {
         to {
           transform: rotate(360deg);
         }
       }
+
       .show {
         display: block;
+      }
+
+      /* Responsive */
+      @media (max-width: 480px) {
+        .card {
+          padding: 14px;
+          border-radius: 12px;
+        }
+
+        h2 {
+          font-size: 1.1rem;
+        }
+
+        button {
+          font-size: 14px;
+          padding: 8px 14px;
+        }
+
+        #result,
+        #searchInput {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
@@ -174,8 +210,10 @@
         readonly
       ></textarea>
       <div class="status" id="status"></div>
+
+      <!-- Search container fixed at bottom -->
       <div class="search-container">
-        <textarea id="searchInput" placeholder="Write prompt..." rows="1" style="resize:vertical; min-height:32px; max-height:80px;"></textarea>
+        <textarea id="searchInput" placeholder="Write prompt..." rows="1"></textarea>
         <button id="searchBtn" title="Search">&#128269</button>
       </div>
     </div>
