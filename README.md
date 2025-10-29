@@ -1,4 +1,4 @@
-# Smart Prompt Buddy
+# Smart helper Buddy
 
 A Chrome extension that leverages Chrome's built-in AI capabilities to summarize web pages and answer questions about their content. Get instant AI-powered summaries and ask any questions about the current page you're viewing.
 
@@ -124,7 +124,7 @@ The extension requires the following permissions:
 ### Testing Changes
 1. Make your code changes
 2. Go to `chrome://extensions/`
-3. Find "Smart Prompt Buddy" and click the reload icon
+3. Find "Smart helper Buddy" and click the reload icon
 4. Test your changes
 
 ### Debugging
@@ -143,10 +143,6 @@ ISC
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
-
-## Author
-
-Created as part of the ChromeAi project.
 
 ## Notes
 
