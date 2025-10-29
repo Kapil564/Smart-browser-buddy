@@ -43,28 +43,13 @@ document.getElementById("summarizeBtn").addEventListener("click", () => {
   });
 });
 
-// fun to get formatted content
+// function to get formatted content
 function getFormattedContent() {
   const data = document.body;
   const clonedata = data.cloneNode(true);
-  excludeElements = [
-    "script",
-    "style",
-    "noscript",
-    "iframe",
-    "img",
-    "svg",
-    "canvas",
-    "video",
-    "audio",
-    "input",
-    "button",
-    "select",
-    "nav",
-    "footer",
-
-    "aside",
-  ];
+  excludeElements = ["script","style","noscript","iframe","img","svg",
+    "canvas","video","audio","input","button","select",
+    "nav","footer","aside",];
   excludeElements.forEach((tag) => {
     const elements = clonedata.querySelectorAll(tag);
     elements.forEach((el) => el.remove());
@@ -106,7 +91,7 @@ document.getElementById("searchBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("searchInput").addEventListener("keydown", async (e) => {
-  if (e.key === "Enter") {
+  if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     await handleSearch();
   }
@@ -118,37 +103,37 @@ async function handleSearch() {
   if (!searchInput || searchInput.trim() === "") {
     return;
   }
-
   const resultArea = document.getElementById("result");
   resultArea.value = "";
   resultArea.placeholder = "generating.....";
   autoResizeTextarea(resultArea);
-  try{
+  try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tab = tabs[0];
-    if (!tab || !tab.url) {
-        console.error("No active tab or URL found.");
-        return;
+    if (!tab || !tab.id) {
+      console.error("No active tab or tab id found.");
+      return;
     }
-  const pageUrl= tab.url;
-  const option = {
-      outputLanguage: "en",
-      type: "text",
-      sharedContent : pageUrl
 
-    };
-  const session = await LanguageModel.create(option,{url: pageUrl});
-  if (!session) {
-    console.error("Failed to create LanguageModel session");
-    return;
-  }
-
-  const result = await session.prompt(searchInput);
-  const resultArea = document.getElementById("result");
-  resultArea.value = result;
-  resultArea.classList.add("filled");
-  autoResizeTextarea(resultArea);
-  }catch(error){
+    // Ask background to run the prompt on behalf of this tab and return the result
+    chrome.runtime.sendMessage({ type: 'prompt', tabId: tab.id, prompt: searchInput }, (response) => {
+      if (!response) {
+        console.error('No response from background');
+        return;
+      }
+      if (response.error) {
+        console.error('Background error:', response.error);
+        resultArea.placeholder = '';
+        return;
+      }
+      const result = response.result;
+      resultArea.value = result || '';
+      resultArea.classList.add('filled');
+      autoResizeTextarea(resultArea);
+    });
+  } catch (error) {
     console.error("Error during search:", error);
   }
 };
+
+console.log('popup.js loaded');

@@ -134,11 +134,9 @@
         background: #f7f7f7;
         color: #222;
         outline: none;
-        transition: border 0.2s;
         max-width: 100%;
         box-sizing: border-box;
-        resize: vertical;
-        min-height: 32px;
+        min-height: 60px;
         max-height: 80px;
       }
 
@@ -174,7 +172,6 @@
         display: block;
       }
 
-      /* Responsive */
       @media (max-width: 480px) {
         .card {
           padding: 14px;
@@ -211,9 +208,8 @@
       ></textarea>
       <div class="status" id="status"></div>
 
-      <!-- Search container fixed at bottom -->
       <div class="search-container">
-        <textarea id="searchInput" placeholder="Write prompt..." rows="1"></textarea>
+        <input id="searchInput" placeholder="Write prompt..."></input>
         <button id="searchBtn" title="Search">&#128269</button>
       </div>
     </div>
