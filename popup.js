@@ -126,7 +126,8 @@ async function handleSearch() {
         resultArea.placeholder = '';
         return;
       }
-      const result = response.result;
+      const data= response.result;
+      const result =data;
       resultArea.value = result || '';
       resultArea.classList.add('filled');
       autoResizeTextarea(resultArea);
