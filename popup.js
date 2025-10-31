@@ -1,3 +1,6 @@
+// controller used to cancel an in-progress summarization when user starts a search
+let summarizeAbortController = null;
+
 document.getElementById("summarizeBtn").addEventListener("click", () => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const tab = tabs[0];
@@ -28,7 +31,82 @@ document.getElementById("summarizeBtn").addEventListener("click", () => {
       };
       if (navigator.userActivation.isActive) {
         const summarizer = await Summarizer.create(option);
-        const summery = await summarizer.summarize(pageContent);
+
+       
+        function chunkTextBySize(text, maxSize = 15000) {
+          const chunks = [];
+          let start = 0;
+          while (start < text.length) {
+            let end = Math.min(start + maxSize, text.length);
+            if (end < text.length) {
+              const slice = text.substring(start, end);
+             
+              const lastDoubleNewline = slice.lastIndexOf('\n\n');
+              const lastNewline = slice.lastIndexOf('\n');
+              const lastPeriod = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('! '), slice.lastIndexOf('? '));
+              const splitPos = Math.max(lastDoubleNewline, lastNewline, lastPeriod);
+              if (splitPos > Math.floor(maxSize * 0.5)) {
+                end = start + splitPos + 1;
+              }
+            }
+            chunks.push(text.substring(start, end));
+            start = end;
+          }
+          return chunks;
+        }
+
+       
+        async function summarizeLargeText(summarizer, text, signal) {
+          const MAX_CHARS = 15000; 
+          if (!text || text.length === 0) return '';
+          if (text.length <= MAX_CHARS) {
+            if (signal && signal.aborted) return '';
+            const single = await summarizer.summarize(text);
+            return signal && signal.aborted ? '' : single;
+          }
+
+          const chunks = chunkTextBySize(text, MAX_CHARS);
+          const partialSummaries = [];
+
+          for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            
+            if (signal && signal.aborted) {
+              streamTextToTextarea(`\n--- Summarization aborted before chunk ${i + 1} ---\n`, resultArea);
+              break;
+            }
+
+            streamTextToTextarea(`\n--- Summarizing chunk ${i + 1} of ${chunks.length} ---\n`, resultArea);
+            try {
+              const partial = await summarizer.summarize(chunk);
+              if (signal && signal.aborted) {
+                streamTextToTextarea(`(chunk ${i + 1} completed but overall summarization aborted)\n`, resultArea);
+                break;
+              }
+              partialSummaries.push(partial);
+              streamTextToTextarea(partial + "\n", resultArea);
+            } catch (err) {
+              streamTextToTextarea(`(chunk ${i + 1} failed: ${err.message})\n`, resultArea);
+            }
+          }
+
+        
+          const combined = partialSummaries.join('\n\n');
+          if (!combined || combined.trim() === '') return combined;
+          if (signal && signal.aborted) {
+            streamTextToTextarea('\n--- Summarization aborted before final summary ---\n', resultArea);
+            return combined; 
+          }
+          
+          const finalSummary = await summarizer.summarize(combined);
+          if (signal && signal.aborted) {
+            streamTextToTextarea('\n--- Summarization aborted after final summary ---\n', resultArea);
+            return combined;
+          }
+          return finalSummary;
+        }
+        summarizeAbortController = new AbortController();
+        const summery = await summarizeLargeText(summarizer, pageContent, summarizeAbortController.signal);
         streamTextToTextarea(summery, resultArea);
         resultArea.classList.add("filled");
       } else {
@@ -36,14 +114,37 @@ document.getElementById("summarizeBtn").addEventListener("click", () => {
       }
     } catch (error) {
       console.error("Script injection failed: ", error.message);
+      resultArea.value = error.message;
+      
     } finally {
       loadingIndicator.classList.remove("show");
       summarizeBtn.disabled = false;
+      summarizeAbortController = null;
     }
   });
 });
 
-// function to get formatted content
+const searchInputEl = document.getElementById("searchInput");
+if (searchInputEl) {
+  searchInputEl.addEventListener('input', () => {
+    if (summarizeAbortController) {
+      try {
+        summarizeAbortController.abort();
+      } catch (e) {
+        // ignore
+      }
+      const loadingIndicator = document.getElementById("loading");
+      const summarizeBtn = document.getElementById("summarizeBtn");
+      const resultArea = document.getElementById("result");
+      streamTextToTextarea("\n--- Summarization canceled by search input ---\n", resultArea);
+      if (loadingIndicator) loadingIndicator.classList.remove("show");
+      if (summarizeBtn) summarizeBtn.disabled = false;
+      summarizeAbortController = null;
+    }
+  });
+}
+
+
 function getFormattedContent() {
   const data = document.body;
   const clonedata = data.cloneNode(true);
@@ -57,7 +158,7 @@ function getFormattedContent() {
   return clonedata.innerText;
 }
 
-// stream content in chunk
+
 function streamTextToTextarea(text, textareaElement) {
   const chunkSize = 500; // Process text in chunks for smoother display
   let index = 0;
@@ -104,6 +205,21 @@ async function handleSearch() {
     return;
   }
   const resultArea = document.getElementById("result");
+
+  if (typeof summarizeAbortController !== 'undefined' && summarizeAbortController) {
+    try {
+      summarizeAbortController.abort();
+    } catch (e) {
+      // ignore
+    }
+    streamTextToTextarea("\n--- Summarization canceled by new search ---\n", resultArea);
+    const loadingIndicator = document.getElementById("loading");
+    const summarizeBtn = document.getElementById("summarizeBtn");
+    if (loadingIndicator) loadingIndicator.classList.remove("show");
+    if (summarizeBtn) summarizeBtn.disabled = false;
+    summarizeAbortController = null;
+  }
+
   resultArea.value = "";
   resultArea.placeholder = "generating.....";
   autoResizeTextarea(resultArea);
@@ -115,7 +231,6 @@ async function handleSearch() {
       return;
     }
 
-    // Ask background to run the prompt on behalf of this tab and return the result
     chrome.runtime.sendMessage({ type: 'prompt', tabId: tab.id, prompt: searchInput }, (response) => {
       if (!response) {
         console.error('No response from background');
